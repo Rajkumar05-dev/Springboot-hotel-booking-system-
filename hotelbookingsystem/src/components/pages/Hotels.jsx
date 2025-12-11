@@ -32,8 +32,10 @@ function Hotels() {
             <h2 className="text-xl font-semibold mt-3">{hotel.name}</h2>
 
             <p className="mt-2 text-gray-700">{hotel.location}</p>
+            <p className="mt-2 text-gray-700">{hotel.description}</p>
+            
 
-            <Link to={`/rooms/${hotel.id}`}>View Rooms</Link>
+            <Link  className="bg-blue-600 text-white px-2 py-1  rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 font-semibold" to={`/rooms/${hotel.id}`}>View Rooms</Link>
           </div>
         ))}
       </div>

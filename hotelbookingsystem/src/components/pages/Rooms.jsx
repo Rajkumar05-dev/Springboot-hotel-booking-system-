@@ -1,10 +1,10 @@
-// src/components/rooms/Rooms.jsx
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 function Rooms() {
   const { hotelId } = useParams();
   const [rooms, setRooms] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!hotelId) return;
@@ -14,6 +14,11 @@ function Rooms() {
       .then((data) => setRooms(Array.isArray(data) ? data : []))
       .catch((err) => console.log("Error fetching rooms:", err));
   }, [hotelId]);
+
+  const handleBook = (room) => {
+    // Navigate to BookingForm and pass roomPrice via state
+    navigate(`/bookings/${room.id}`, { state: { roomPrice: room.pricePerNight } });
+  };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen font-sans">
@@ -56,8 +61,12 @@ function Rooms() {
             </p>
 
             {room.status === "AVAILABLE" && (
-             <Link to={`/bookings/${room.id}`} className="...">Book Now</Link>
-
+              <button
+                onClick={() => handleBook(room)}
+                className="bg-blue-600 text-white px-2 py-1 rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 font-semibold"
+              >
+                Book Room
+              </button>
             )}
           </div>
         ))}
