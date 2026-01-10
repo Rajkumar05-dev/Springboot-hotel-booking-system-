@@ -15,4 +15,6 @@ public class HotelbookingApplication {
 public ModelMapper modelMapper() {
 	return  new ModelMapper();
 }
+	
+	
 }

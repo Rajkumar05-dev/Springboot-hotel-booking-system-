@@ -21,44 +21,42 @@ import com.learn.Hotelbooking.security.LoginRequest;
 import com.learn.Hotelbooking.security.LoginResponse;
 import com.learn.Hotelbooking.security.jwt.JwtUtils;
 
-
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-	
 	@Autowired
 	private UserRepository userRepository;
-	 @Autowired
+	@Autowired
 	private JwtUtils jwtUtils;
-	 @Autowired
+	@Autowired
 	private AuthenticationManager authenticationManager;
-	 @Autowired
-	 private ModelMapper modelMapper;
+	@Autowired
+	private ModelMapper modelMapper;
+
 	@PostMapping("/login")
-	public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest)
-	{
-		String email=loginRequest.getEmail();
-		String password=loginRequest.getPassword();
-		Authentication authenticate=null;
+	public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+		String email = loginRequest.getEmail();
+		String password = loginRequest.getPassword();
+		Authentication authenticate = null;
+
 		try {
-			authenticate= authenticationManager.authenticate( new UsernamePasswordAuthenticationToken(email,password));
-	        }	
-	catch(BadCredentialsException badCredentialsException) 
-		{
-		System.out.println("bad credentionl");
-	    }
-	  SecurityContextHolder.getContext().setAuthentication(authenticate);
-       User user=	(User)authenticate.getPrincipal();		
-   
-       String token=jwtUtils.generateTokenFromUsername(user);
-       
-     LoginResponse loginResponse= new LoginResponse();
-       
-     loginResponse.setToken(token);
-       
-     UserDto userDto=modelMapper.map(user,UserDto.class);
-     loginResponse.setUserDto(userDto);
-     return new ResponseEntity<LoginResponse>(loginResponse,HttpStatus.OK) ;
-}
+			authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+		} catch (BadCredentialsException badCredentialsException) {
+			System.out.println("bad credentionl");
+		}
+
+		SecurityContextHolder.getContext().setAuthentication(authenticate);
+		User user = (User) authenticate.getPrincipal();
+
+		String token = jwtUtils.generateTokenFromUsername(user);
+
+		LoginResponse loginResponse = new LoginResponse();
+
+		loginResponse.setToken(token);
+
+		UserDto userDto = modelMapper.map(user, UserDto.class);
+		loginResponse.setUserDto(userDto);
+		return new ResponseEntity<LoginResponse>(loginResponse, HttpStatus.OK);
+	}
 }

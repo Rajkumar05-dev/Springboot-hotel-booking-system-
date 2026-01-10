@@ -10,7 +10,7 @@ function Register() {
     watch,
   } = useForm();
 
-  const navigate = useNavigate(); // for redirect
+  const navigate = useNavigate();
   const [success, setSuccess] = React.useState(false);
   const password = watch("password");
 
@@ -24,7 +24,7 @@ function Register() {
     })
       .then((res) => {
         if (res.ok) {
-          setSuccess(true); // Show popup
+          setSuccess(true);
         } else {
           alert("Registration failed!");
         }
@@ -44,9 +44,8 @@ function Register() {
             <p className="text-gray-700 mb-4">
               Your account has been created successfully.
             </p>
-
             <button
-              onClick={() => navigate("/login")} // redirect to login
+              onClick={() => navigate("/login")}
               className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
             >
               OK
@@ -55,7 +54,7 @@ function Register() {
         </div>
       )}
 
-      {/* MAIN REGISTER FORM */}
+      {/* REGISTER FORM */}
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
         <div className="bg-white shadow-xl rounded-xl flex max-w-5xl w-full overflow-hidden">
           <div className="hidden md:block w-1/2">
@@ -72,7 +71,7 @@ function Register() {
             </h2>
 
             <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-              {/* Name */}
+              {/* NAME */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Name
@@ -81,6 +80,14 @@ function Register() {
                   type="text"
                   placeholder="Enter your name"
                   className="w-full border border-gray-300 px-4 py-2 rounded-lg"
+                  onKeyDown={(e) => {
+                    if (
+                      !/[a-zA-Z ]/.test(e.key) &&
+                      e.key !== "Backspace"
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                   {...register("name", {
                     required: "Name is required",
                     minLength: {
@@ -91,6 +98,11 @@ function Register() {
                       value: 60,
                       message: "Maximum 60 characters allowed",
                     },
+                    pattern: {
+                      value: /^[A-Za-z ]+$/,
+                      message:
+                        "Name should contain only letters (no numbers or symbols)",
+                    },
                   })}
                 />
                 <p className="text-red-500 text-sm mt-1">
@@ -98,7 +110,7 @@ function Register() {
                 </p>
               </div>
 
-              {/* Email */}
+              {/* EMAIL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
@@ -123,7 +135,7 @@ function Register() {
                 </p>
               </div>
 
-              {/* Password */}
+              {/* PASSWORD */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -145,7 +157,7 @@ function Register() {
                 </p>
               </div>
 
-              {/* Confirm Password */}
+              {/* CONFIRM PASSWORD */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Confirm Password
@@ -164,7 +176,7 @@ function Register() {
                 </p>
               </div>
 
-              {/* Submit */}
+              {/* SUBMIT */}
               <button
                 type="submit"
                 className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"

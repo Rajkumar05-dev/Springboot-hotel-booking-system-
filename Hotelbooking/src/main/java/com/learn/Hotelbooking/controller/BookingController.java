@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.learn.Hotelbooking.Dto.BookingDto;
 import com.learn.Hotelbooking.service.BookingService;
+import com.razorpay.RazorpayException;
 
 @RestController
 @RequestMapping("/bookings")
@@ -29,4 +30,22 @@ public class BookingController {
     public ResponseEntity<List<BookingDto>> getAll() {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
-} 
+    // 4️⃣ CONFIRM PAYMENT (🔥 IMPORTANT)
+    @PostMapping("/confirm-payment")
+    public ResponseEntity<String> confirmPayment(
+            @RequestParam Long bookingId,
+            @RequestParam String razorpayOrderId,
+            @RequestParam String razorpayPaymentId,
+            @RequestParam String razorpaySignature) throws RazorpayException {
+
+        bookingService.ConfrimPayment(
+                bookingId,
+                razorpayOrderId,
+                razorpayPaymentId,
+                razorpaySignature
+        );
+
+        return ResponseEntity.ok("Payment successful. Booking confirmed.");
+    }
+}   
+

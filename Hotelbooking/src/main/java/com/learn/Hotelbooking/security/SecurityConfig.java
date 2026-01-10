@@ -16,48 +16,56 @@ import org.springframework.web.cors.CorsConfiguration;
 import com.learn.Hotelbooking.security.jwt.AuthEntryPointJwt;
 import com.learn.Hotelbooking.security.jwt.AuthTokenFilter;
 
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-	@Autowired
-	private AuthEntryPointJwt authEntryPointJwt;
-	@Autowired
-	private AuthTokenFilter authTokenFilter;
-		@Bean
-		SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.csrf(csrf->csrf.disable())
-		.cors(cors -> cors.configurationSource(request -> {
-	        CorsConfiguration config = new CorsConfiguration();
-	        config.setAllowCredentials(true);
-	        config.addAllowedOrigin("http://localhost:5173");
-	        config.addAllowedHeader("*");
-	        config.addAllowedMethod("*");
-	        return config;
-	    }))
-		.authorizeHttpRequests(req->
-		req.requestMatchers(
-		        "/users/register",
-		        "/auth/login",
-		        "/hotels/**",
-		         "/rooms/**",
-		        "/bookings/**",
-		         "/users/*/check"
-		).permitAll()
-		.anyRequest().authenticated());
 
-		 httpSecurity.exceptionHandling(authentication->
-		 authentication.authenticationEntryPoint(authEntryPointJwt));
-		 httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
-		return httpSecurity.build();
-		
-	}
-		@Bean
-		public PasswordEncoder passwordEncoder() {
-			return new BCryptPasswordEncoder();
-		}
-		@Bean
-		public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-			return authenticationConfiguration.getAuthenticationManager();
-		}
+    @Autowired
+    private AuthEntryPointJwt authEntryPointJwt;
+
+    @Autowired
+    private AuthTokenFilter authTokenFilter;
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(request -> {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowCredentials(true);
+                config.addAllowedOrigin("http://localhost:5173");
+                config.addAllowedHeader("*");
+                config.addAllowedMethod("*");
+                return config;
+            }))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/users/register",
+                    "/auth/login",
+                    "/users/*/check",
+                    "/hotels/**",
+                    "/rooms/**",
+                    "/bookings",               // ✅ allow booking creation
+                    "/bookings/confirm-payment", // ✅ allow payment confirmation
+                    "/payments/create-order"   // ✅ allow Razorpay order creation
+                ).permitAll()
+                .anyRequest().authenticated()
+            )
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(authEntryPointJwt)
+            )
+            .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 }

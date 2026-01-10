@@ -8,12 +8,15 @@ function BookingForm() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+
   const { register, handleSubmit, watch, setValue } = useForm();
   const [totalPrice, setTotalPrice] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  // Get roomPrice from Rooms.jsx via state
+  // Room price passed from Rooms.jsx
   const roomPrice = location.state?.roomPrice || 0;
 
+  // Redirect if not logged in
   const localUser = JSON.parse(localStorage.getItem("user"));
   if (!localUser) {
     alert("Login First");
@@ -21,18 +24,29 @@ function BookingForm() {
     return null;
   }
 
+  // Today date
+  const today = new Date().toISOString().split("T")[0];
+
+  // Watch dates
   const checkInDate = watch("checkInDate");
   const checkOutDate = watch("checkOutDate");
 
+  // Default check-in date
+  useEffect(() => {
+    setValue("checkInDate", today);
+  }, [setValue, today]);
+
+  // Calculate total price
   useEffect(() => {
     if (checkInDate && checkOutDate) {
       const start = new Date(checkInDate);
       const end = new Date(checkOutDate);
-      const diffTime = end - start;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
       if (diffDays > 0) {
-        setTotalPrice(diffDays * roomPrice);
-        setValue("totalPrice", diffDays * roomPrice);
+        const price = diffDays * roomPrice;
+        setTotalPrice(price);
+        setValue("totalPrice", price);
       } else {
         setTotalPrice(0);
         setValue("totalPrice", 0);
@@ -40,27 +54,84 @@ function BookingForm() {
     }
   }, [checkInDate, checkOutDate, roomPrice, setValue]);
 
-  const onSubmit = (data) => {
-    const bookingData = {
-      roomId,
-      userId: user?.id,
-      checkInDate: data.checkInDate,
-      checkOutDate: data.checkOutDate,
-      totalPrice: data.totalPrice,
-      status: "PENDING",
-    };
+  // Submit + Payment
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true);
 
-    fetch("http://localhost:8080/bookings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(bookingData),
-    })
-      .then((res) => res.json())
-      .then(() => navigate("/mybookings"))
-      .catch((err) => console.log(err));
+      // 1️⃣ Create Booking
+      const bookingResponse = await fetch("http://localhost:8080/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          roomId,
+          userId: user.id,
+          checkInDate: data.checkInDate,
+          checkOutDate: data.checkOutDate,
+          totalPrice: totalPrice,
+          status: "PENDING",
+        }),
+      });
+
+      if (!bookingResponse.ok) throw new Error("Booking failed");
+
+      const booking = await bookingResponse.json();
+      const bookingId = booking.id;
+
+      // 2️⃣ Create Razorpay Order
+      const orderResponse = await fetch(
+        `http://localhost:8080/payments/create-order?amount=${totalPrice}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!orderResponse.ok) throw new Error("Order creation failed");
+
+      const orderData = await orderResponse.json();
+
+      // 3️⃣ Razorpay Payment
+      const options = {
+        key: "rzp_test_S060WMnc2eFoWe",
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Hotel Booking",
+        description: "Room Booking Payment",
+        order_id: orderData.razorpayOrderId,
+
+        handler: async function (response) {
+          // 4️⃣ Confirm Payment
+          await fetch(
+            `http://localhost:8080/bookings/confirm-payment?bookingId=${bookingId}&razorpayOrderId=${response.razorpay_order_id}&razorpayPaymentId=${response.razorpay_payment_id}&razorpaySignature=${response.razorpay_signature}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          alert("Payment Successful 🎉");
+          navigate("/mybookings");
+        },
+
+        theme: { color: "#2563eb" },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,32 +142,36 @@ function BookingForm() {
         </h2>
 
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+          {/* Check-in */}
           <div>
             <label className="block mb-1 font-medium">Check-in Date</label>
             <input
               type="date"
               className="w-full border px-4 py-2 rounded"
               {...register("checkInDate")}
+              min={today}
               required
             />
           </div>
 
+          {/* Check-out */}
           <div>
             <label className="block mb-1 font-medium">Check-out Date</label>
             <input
               type="date"
               className="w-full border px-4 py-2 rounded"
               {...register("checkOutDate")}
+              min={checkInDate || today}
               required
             />
           </div>
 
+          {/* Total Price */}
           <div>
             <label className="block mb-1 font-medium">Total Price</label>
             <input
               type="number"
               className="w-full border px-4 py-2 rounded bg-gray-100"
-              {...register("totalPrice")}
               value={totalPrice}
               readOnly
             />
@@ -104,9 +179,14 @@ function BookingForm() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium"
+            disabled={loading || totalPrice === 0}
+            className={`w-full text-white py-2 rounded font-medium ${
+              loading || totalPrice === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            Book Now
+            {loading ? "Processing..." : "Book & Pay Now"}
           </button>
         </form>
       </div>

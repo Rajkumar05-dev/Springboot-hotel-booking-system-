@@ -27,8 +27,14 @@ public class Booking {
 
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
-
+    
+    private String razorpayOrderId;
+	private String razorpayPaymentId;
+	
     private Double totalPrice;
 
-    private String status;   // CONFIRMED, CANCELLED, PENDING
+    @Enumerated(EnumType.STRING)
+    private BookingStatus bookingStatus;   // CONFIRMED, CANCELLED, PENDING
+    @Enumerated(EnumType.STRING)
+     private PaymentStatus paymentStatus;
 }

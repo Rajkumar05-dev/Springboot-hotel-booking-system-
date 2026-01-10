@@ -11,10 +11,12 @@ import BookingForm from "./components/pages/Bookingform";
 import MyBookings from "./components/pages/MyBookings";
 import Rooms from "./components/pages/Rooms";
 
+
 function App() {
   return (
     <div>
-      <Navbar />
+    
+       <Navbar />
 
       <Routes>
         <Route path="/" element={<Home />} />
@@ -26,7 +28,7 @@ function App() {
 
          <Route path="/mybookings" element={<MyBookings />} />
       </Routes>
-      <Footer />
+      <Footer /> *
     </div>
   );
 }
